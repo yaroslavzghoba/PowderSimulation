@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Powder Simulation"
 include(":app")
+include(":core:model")
