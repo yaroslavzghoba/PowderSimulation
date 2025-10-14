@@ -1,0 +1,57 @@
+# ========================================
+# Android / Kotlin Project .gitignore
+# ========================================
+
+# --- Build artifacts ---
+/build/
+**/build/
+bin/
+gen/
+out/
+generated/
+.externalNativeBuild/
+.cxx/
+output-metadata.json
+
+# --- Compiled files ---
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+
+# --- Log & profiling files ---
+*.log
+*.hprof
+
+# --- Local configuration (machine-specific) ---
+local.properties
+
+# --- IDE / Android Studio ---
+*.iml
+.idea/
+!.idea/copyright/
+!.idea/codeStyles/
+!.idea/codeStyles/Project.xml
+!.idea/codeStyles/codeStyleConfig.xml
+
+# --- Gradle cache ---
+.gradle/
+
+# --- Captures (screenshots, recordings, etc.) ---
+captures/
+
+# --- Keystore files (do not share signing keys) ---
+*.jks
+*.keystore
+
+# --- Kotlin specific ---
+.kotlin/
+
+# --- OS / system files ---
+.DS_Store
+Thumbs.db
+
+# --- Eclipse project files ---
+.classpath
+.project
