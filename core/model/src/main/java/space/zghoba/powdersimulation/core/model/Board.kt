@@ -1,12 +1,12 @@
 package space.zghoba.powdersimulation.core.model
 
-class Board(
+data class Board(
     val width: Int,
     val height: Int,
     private val init: (coordinates: RectCoordinates) -> Cell,
 ) {
     private val size = width * height
-    protected var cells: MutableList<Cell> = List(size = size) { index ->
+    private var cells: MutableList<Cell> = List(size = size) { index ->
         init(getCoordinates(index))
     }.toMutableList()
 
