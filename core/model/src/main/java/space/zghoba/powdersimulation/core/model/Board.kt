@@ -1,15 +1,12 @@
-package space.zghoba.powdersimulation.core.domain.repository
+package space.zghoba.powdersimulation.core.model
 
-import space.zghoba.powdersimulation.core.model.Cell
-import space.zghoba.powdersimulation.core.model.RectCoordinates
-
-abstract class Board(
+data class Board(
     val width: Int,
     val height: Int,
     private val init: (coordinates: RectCoordinates) -> Cell,
 ) {
     private val size = width * height
-    protected var cells: MutableList<Cell> = List(size = size) { index ->
+    private var cells: MutableList<Cell> = List(size = size) { index ->
         init(getCoordinates(index))
     }.toMutableList()
 
@@ -20,7 +17,7 @@ abstract class Board(
         return cells[index]
     }
 
-    protected fun setCell(cell: Cell, coordinates: RectCoordinates) {
+    fun setCell(cell: Cell, coordinates: RectCoordinates) {
         validateCoordinates(coordinates)
 
         val index = getIndex(coordinates)
@@ -36,13 +33,11 @@ abstract class Board(
         }
     }
 
-    protected fun getIndex(coordinates: RectCoordinates) =
+    private fun getIndex(coordinates: RectCoordinates) =
         coordinates.y * width + coordinates.x
 
-    protected fun getCoordinates(index: Int) = RectCoordinates(
+    private fun getCoordinates(index: Int) = RectCoordinates(
         x = index % width,
         y = index / width,
     )
-
-    abstract fun update()
 }
