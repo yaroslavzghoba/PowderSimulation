@@ -24,7 +24,7 @@ sealed class Material(val rules: List<MaterialRule>, color: Color) : Cell(color)
         color = Color.fromArgb(alpha = 1f, red = 242, green = 210, blue = 169),
     )
 
-    object Water : Material(
+    data object Water : Material(
         rules = listOf(
             MaterialRule.FALL_STRAIGHT,
             MaterialRule.SLIDE_DIAGONALLY,
