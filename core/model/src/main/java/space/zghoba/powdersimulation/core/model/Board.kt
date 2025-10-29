@@ -3,25 +3,18 @@ package space.zghoba.powdersimulation.core.model
 data class Board(
     val width: Int,
     val height: Int,
-    private val init: (coordinates: RectCoordinates) -> Cell,
+    private val init: (coordinates: RectCoordinates) -> Cell = { _ -> Material.Void },
 ) {
     private val size = width * height
-    private var cells: MutableList<Cell> = List(size = size) { index ->
+    private val cells: List<Cell> = List(size = size) { index ->
         init(getCoordinates(index))
-    }.toMutableList()
+    }
 
     fun getCell(coordinates: RectCoordinates): Cell {
         validateCoordinates(coordinates)
 
         val index = getIndex(coordinates)
         return cells[index]
-    }
-
-    fun setCell(cell: Cell, coordinates: RectCoordinates) {
-        validateCoordinates(coordinates)
-
-        val index = getIndex(coordinates)
-        cells[index] = cell
     }
 
     private fun validateCoordinates(coordinates: RectCoordinates) {
