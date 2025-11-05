@@ -105,7 +105,7 @@ private fun PowderSimulationBoard(
     Canvas(
         modifier = modifier
             .pointerInput(board.width, board.height) {
-                detectDragGestures { change, dragAmount ->
+                detectDragGestures { change, _ ->
                     if (canvasSize == null) return@detectDragGestures
 
                     val cellPositionX = change.position.x
