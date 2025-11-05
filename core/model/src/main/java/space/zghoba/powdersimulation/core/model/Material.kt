@@ -4,19 +4,29 @@ package space.zghoba.powdersimulation.core.model
 /**
  * Material in powder simulation such as sand or water.
  *
+ * @param density The density of the material.
  * @param rules A list of rules that apply to the material. Rules order defines their priority.
  * The first rule on the list has the highest priority.
+ * @param color The color in which the material can be displayed.
  */
-sealed class Material(val rules: List<MaterialRule>, color: Color) : Cell(color) {
+sealed class Material(
+    val density: Float,
+    val rules: List<MaterialRule>,
+    color: Color,
+) : Cell(color) {
 
     @Suppress("unused")
     data object Stone : Material(
-        rules = emptyList(),
+        density = 2.8f,
+        rules = listOf(
+            MaterialRule.FALL_STRAIGHT,
+        ),
         color = Color.fromArgb(alpha = 1f, red = 136, green = 140, blue = 141),
     )
 
     @Suppress("unused")
     data object Sand : Material(
+        density = 2.6f,
         rules = listOf(
             MaterialRule.FALL_STRAIGHT,
             MaterialRule.SLIDE_DIAGONALLY,
@@ -28,6 +38,7 @@ sealed class Material(val rules: List<MaterialRule>, color: Color) : Cell(color)
 
     @Suppress("unused")
     data object Water : Material(
+        density = 1f,
         rules = listOf(
             MaterialRule.FALL_STRAIGHT,
             MaterialRule.SLIDE_DIAGONALLY,
@@ -42,6 +53,7 @@ sealed class Material(val rules: List<MaterialRule>, color: Color) : Cell(color)
 
     @Suppress("unused")
     data object Void : Material(
+        density = 0f,
         rules = emptyList(),
         color = Color.fromArgb(alpha = 0f, red = 0, green = 0, blue = 0),
     )

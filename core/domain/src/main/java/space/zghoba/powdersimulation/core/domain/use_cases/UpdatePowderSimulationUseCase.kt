@@ -55,30 +55,42 @@ class UpdatePowderSimulationUseCase {
                         y = coordinates.y + GravityOffsetUnits.DOWN,
                     )
                     if (targetCoordinates.y !in 0..<updatedBoard.height) continue
-                    if (updatedBoard.getCell(coordinates = targetCoordinates) !is Material.Void)
-                        continue
 
-                    this.moveMaterial(material, coordinates, targetCoordinates)
+                    val materialAtTargetCoordinates =
+                        updatedBoard.getCell(coordinates = targetCoordinates) as Material
+                    if (material.density <= materialAtTargetCoordinates.density) continue
+
+                    swapMaterials(material, coordinates, targetCoordinates)
                     isUpdated = true
                 }
 
                 MaterialRule.SLIDE_DIAGONALLY -> {
                     val targetY = coordinates.y + GravityOffsetUnits.DOWN
-                    val leftX = coordinates.x + GravityOffsetUnits.LEFT
-                    val rightX = coordinates.x + GravityOffsetUnits.RIGHT
-                    val leftCoordinates = RectCoordinates(x = leftX, y = targetY)
-                    val rightCoordinates = RectCoordinates(x = rightX, y = targetY)
+                    val belowLeftX = coordinates.x + GravityOffsetUnits.LEFT
+                    val belowRightX = coordinates.x + GravityOffsetUnits.RIGHT
+                    val belowLeftCoordinates = RectCoordinates(x = belowLeftX, y = targetY)
+                    val belowRightCoordinates = RectCoordinates(x = belowRightX, y = targetY)
 
                     if (targetY !in 0..<updatedBoard.height) continue
-                    val isLeftOpen: Boolean = leftX in 0..<updatedBoard.width
-                            && updatedBoard.getCell(coordinates = leftCoordinates) is Material.Void
-                    val isRightOpen: Boolean = rightX in 0..<updatedBoard.width
-                            && updatedBoard.getCell(coordinates = rightCoordinates) is Material.Void
-                    // Exit if at least one of the two places is not free.
-                    if (!isLeftOpen || !isRightOpen) continue
 
-                    val targetCoordinates = listOf(leftCoordinates, rightCoordinates).random()
-                    this.moveMaterial(material, coordinates, targetCoordinates)
+                    // Check a cell below left.
+                    if (belowLeftX !in 0..<updatedBoard.width) continue
+                    val materialBelowLeft =
+                        updatedBoard.getCell(coordinates = belowLeftCoordinates) as Material
+                    val isBelowLeftOpen = material.density > materialBelowLeft.density
+
+                    // Check a cell below right.
+                    if (belowRightX !in 0..<updatedBoard.width) continue
+                    val materialBelowRight =
+                        updatedBoard.getCell(coordinates = belowRightCoordinates) as Material
+                    val isBelowRightOpen = material.density > materialBelowRight.density
+
+                    // Exit if at least one of the two places is not free.
+                    if (!isBelowLeftOpen || !isBelowRightOpen) continue
+
+                    val targetCoordinates =
+                        listOf(belowLeftCoordinates, belowRightCoordinates).random()
+                    swapMaterials(material, coordinates, targetCoordinates)
                     isUpdated = true
                 }
 
@@ -89,10 +101,11 @@ class UpdatePowderSimulationUseCase {
                     )
                     if (targetCoordinates.x !in 0..<updatedBoard.width) continue
                     if (targetCoordinates.y !in 0..<updatedBoard.height) continue
-                    if (updatedBoard.getCell(coordinates = targetCoordinates) !is Material.Void)
-                        continue
+                    val materialAtTargetCoordinates =
+                        updatedBoard.getCell(coordinates = targetCoordinates) as Material
+                    if (material.density <= materialAtTargetCoordinates.density) continue
 
-                    this.moveMaterial(material, coordinates, targetCoordinates)
+                    swapMaterials(material, coordinates, targetCoordinates)
                     isUpdated = true
                 }
 
@@ -103,10 +116,11 @@ class UpdatePowderSimulationUseCase {
                     )
                     if (targetCoordinates.x !in 0..<updatedBoard.width) continue
                     if (targetCoordinates.y !in 0..<updatedBoard.height) continue
-                    if (updatedBoard.getCell(coordinates = targetCoordinates) !is Material.Void)
-                        continue
+                    val materialAtTargetCoordinates =
+                        updatedBoard.getCell(coordinates = targetCoordinates) as Material
+                    if (material.density <= materialAtTargetCoordinates.density) continue
 
-                    this.moveMaterial(material, coordinates, targetCoordinates)
+                    swapMaterials(material, coordinates, targetCoordinates)
                     isUpdated = true
                 }
 
@@ -114,15 +128,23 @@ class UpdatePowderSimulationUseCase {
                     val leftCoordinates = coordinates.copy(x = coordinates.x + GravityOffsetUnits.LEFT)
                     val rightCoordinates = coordinates.copy(x = coordinates.x + GravityOffsetUnits.RIGHT)
 
-                    val isLeftOpen: Boolean = leftCoordinates.x in 0..<updatedBoard.width
-                            && updatedBoard.getCell(coordinates = leftCoordinates) is Material.Void
-                    val isRightOpen: Boolean = rightCoordinates.x in 0..<updatedBoard.width
-                            && updatedBoard.getCell(coordinates = rightCoordinates) is Material.Void
+                    // Check a cell left.
+                    if (leftCoordinates.x !in 0..<updatedBoard.width) continue
+                    val materialLeft =
+                        updatedBoard.getCell(coordinates = leftCoordinates) as Material
+                    val isLeftOpen = material.density > materialLeft.density
+
+                    // Check a cell right.
+                    if (rightCoordinates.x !in 0..<updatedBoard.width) continue
+                    val materialRight =
+                        updatedBoard.getCell(coordinates = rightCoordinates) as Material
+                    val isRightOpen = material.density > materialRight.density
+
                     // Exit if at least one of the two places is not free.
                     if (!isLeftOpen || !isRightOpen) continue
 
                     val targetCoordinates = listOf(leftCoordinates, rightCoordinates).random()
-                    this.moveMaterial(material, coordinates, targetCoordinates)
+                    swapMaterials(material, coordinates, targetCoordinates)
                     isUpdated = true
                 }
 
@@ -131,10 +153,11 @@ class UpdatePowderSimulationUseCase {
                         x = coordinates.x + GravityOffsetUnits.LEFT,
                     )
                     if (targetCoordinates.x !in 0..<updatedBoard.width) continue
-                    if (updatedBoard.getCell(coordinates = targetCoordinates) !is Material.Void)
-                        continue
+                    val materialAtTargetCoordinates =
+                        updatedBoard.getCell(coordinates = targetCoordinates) as Material
+                    if (material.density <= materialAtTargetCoordinates.density) continue
 
-                    this.moveMaterial(material, coordinates, targetCoordinates)
+                    swapMaterials(material, coordinates, targetCoordinates)
                     isUpdated = true
                 }
 
@@ -143,25 +166,27 @@ class UpdatePowderSimulationUseCase {
                         x = coordinates.x + GravityOffsetUnits.RIGHT,
                     )
                     if (targetCoordinates.x !in 0..<updatedBoard.width) continue
-                    if (updatedBoard.getCell(coordinates = targetCoordinates) !is Material.Void)
-                        continue
+                    val materialAtTargetCoordinates =
+                        updatedBoard.getCell(coordinates = targetCoordinates) as Material
+                    if (material.density <= materialAtTargetCoordinates.density) continue
 
-                    moveMaterial(material, coordinates, targetCoordinates)
+                    swapMaterials(material, coordinates, targetCoordinates)
                     isUpdated = true
                 }
             }
         }
     }
 
-    private fun moveMaterial(
-        material: Material,
-        currentCoordinates: RectCoordinates,
-        targetCoordinates: RectCoordinates,
+    private fun swapMaterials(
+        firstMaterial: Material,
+        firstMaterialCoordinates: RectCoordinates,
+        secondMaterialCoordinates: RectCoordinates,
     ) {
+        val secondMaterial = updatedBoard.getCell(secondMaterialCoordinates)
         updatedBoard = updatedBoard.copy { coordinates ->
             when (coordinates) {
-                currentCoordinates -> Material.Void
-                targetCoordinates -> material
+                firstMaterialCoordinates -> secondMaterial
+                secondMaterialCoordinates -> firstMaterial
                 else -> updatedBoard.getCell(coordinates)
             }
         }
