@@ -16,6 +16,13 @@ sealed class Material(
 ) : Cell(color) {
 
     @Suppress("unused")
+    data object Iron : Material(
+        density = 7.87f,
+        rules = emptyList(),
+        color = Color.fromArgb(alpha = 1f, red = 82, green = 89, blue = 95)
+    )
+
+    @Suppress("unused")
     data object Stone : Material(
         density = 2.8f,
         rules = listOf(
