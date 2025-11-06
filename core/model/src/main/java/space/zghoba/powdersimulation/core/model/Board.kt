@@ -1,14 +1,14 @@
 package space.zghoba.powdersimulation.core.model
 
-data class Board(
+open class Board(
     val width: Int,
     val height: Int,
     private val init: (coordinates: RectCoordinates) -> Cell = { _ -> Material.Void },
 ) {
     private val size = width * height
-    private val cells: List<Cell> = List(size = size) { index ->
+    protected val cells: MutableList<Cell> = List(size = size) { index ->
         init(getCoordinates(index))
-    }
+    }.toMutableList()
 
     fun getCell(coordinates: RectCoordinates): Cell {
         validateCoordinates(coordinates)
@@ -17,16 +17,18 @@ data class Board(
         return cells[index]
     }
 
-    private fun validateCoordinates(coordinates: RectCoordinates) {
+    protected fun validateCoordinates(coordinates: RectCoordinates) {
         require(coordinates.x in 0..<width) {
-            "The x-coordinate is out of bounds. The value must be in the range [0, ${width - 1}]."
+            "The x-coordinate (${coordinates.x}) is out of bounds. " +
+                    "The value must be in the range [0, ${width - 1}]."
         }
         require(coordinates.y in 0..<height) {
-            "The y-coordinate is out of bounds. The value must be in the range [0, ${height - 1}]."
+            "The y-coordinate (${coordinates.y}) is out of bounds. " +
+                    "The value must be in the range [0, ${height - 1}]."
         }
     }
 
-    private fun getIndex(coordinates: RectCoordinates) =
+    protected fun getIndex(coordinates: RectCoordinates) =
         coordinates.y * width + coordinates.x
 
     private fun getCoordinates(index: Int) = RectCoordinates(
@@ -34,3 +36,16 @@ data class Board(
         y = index / width,
     )
 }
+
+/**
+ * Create a copy of the board.
+ */
+fun Board.copy(
+    width: Int = this.width,
+    height: Int = this.height,
+    init: (coordinates: RectCoordinates) -> Cell = { coordinates -> this.getCell(coordinates) },
+) = Board(
+    width = width,
+    height = height,
+    init = init,
+)
