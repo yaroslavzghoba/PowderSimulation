@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import space.zghoba.powdersimulation.core.domain.use_cases.UpdatePowderSimulationUseCase
+import space.zghoba.powdersimulation.core.model.copy
 import space.zghoba.powdersimulation.feature.powdersimulation.utils.PowderSimulationConstants
 import kotlin.math.round
 

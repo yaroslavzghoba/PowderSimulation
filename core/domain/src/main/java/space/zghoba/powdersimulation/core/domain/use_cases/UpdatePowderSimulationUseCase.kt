@@ -1,9 +1,13 @@
 package space.zghoba.powdersimulation.core.domain.use_cases
 
+import space.zghoba.powdersimulation.core.mappers.toBoard
+import space.zghoba.powdersimulation.core.mappers.toMutableBoard
 import space.zghoba.powdersimulation.core.model.Board
 import space.zghoba.powdersimulation.core.model.Material
 import space.zghoba.powdersimulation.core.model.MaterialRule
+import space.zghoba.powdersimulation.core.model.MutableBoard
 import space.zghoba.powdersimulation.core.model.RectCoordinates
+import space.zghoba.powdersimulation.core.model.copy
 
 // This companion object helps with the gravity simulation logic
 private object GravityOffsetUnits {
@@ -19,18 +23,17 @@ private object GravityOffsetUnits {
  */
 class UpdatePowderSimulationUseCase {
 
-    private lateinit var updatedBoard: Board
-
     /**
      * Update the powder simulation board by one iteration forward.
      */
     operator fun invoke(board: Board): Board {
-        updatedBoard = board.copy()
-        updateBoard(sourceBoard = board)
-        return updatedBoard
+        return board.toMutableBoard()
+            .apply { this.update() }
+            .toBoard()
     }
 
-    private fun updateBoard(sourceBoard: Board) {
+    private fun MutableBoard.update() {
+        val sourceBoard = this.copy()
         (0..<sourceBoard.height).forEach { y ->
             (0..<sourceBoard.width).forEach { x ->
                 val coordinates = RectCoordinates(x, y)
@@ -39,10 +42,10 @@ class UpdatePowderSimulationUseCase {
         }
     }
 
-    private fun updateCell(coordinates: RectCoordinates, sourceBoard: Board) {
+    private fun MutableBoard.updateCell(coordinates: RectCoordinates, sourceBoard: Board) {
         val material = sourceBoard.getCell(coordinates) as? Material
             ?: throw IllegalArgumentException(
-                "The cell at coordinates (${coordinates.x}, ${coordinates.y}) is not a material.",
+                "The cell at coordinates $coordinates is not a material.",
             )
 
         var isUpdated = false
@@ -51,144 +54,260 @@ class UpdatePowderSimulationUseCase {
 
             when (rule) {
                 MaterialRule.FALL_STRAIGHT -> {
-                    val targetCoordinates = coordinates.copy(
-                        y = coordinates.y + GravityOffsetUnits.DOWN,
+                    val isMoved = this.tryMoveMaterialDown(
+                        materialAtCurrentCoordinates = material,
+                        currentCoordinates = coordinates,
                     )
-                    if (targetCoordinates.y !in 0..<updatedBoard.height) continue
-
-                    val materialAtTargetCoordinates =
-                        updatedBoard.getCell(coordinates = targetCoordinates) as Material
-                    if (material.density <= materialAtTargetCoordinates.density) continue
-
-                    swapMaterials(material, coordinates, targetCoordinates)
-                    isUpdated = true
+                    if (isMoved) isUpdated = true
                 }
 
                 MaterialRule.SLIDE_DIAGONALLY -> {
-                    val targetY = coordinates.y + GravityOffsetUnits.DOWN
-                    val belowLeftX = coordinates.x + GravityOffsetUnits.LEFT
-                    val belowRightX = coordinates.x + GravityOffsetUnits.RIGHT
-                    val belowLeftCoordinates = RectCoordinates(x = belowLeftX, y = targetY)
-                    val belowRightCoordinates = RectCoordinates(x = belowRightX, y = targetY)
-
-                    if (targetY !in 0..<updatedBoard.height) continue
-
-                    // Check a cell below left.
-                    if (belowLeftX !in 0..<updatedBoard.width) continue
-                    val materialBelowLeft =
-                        updatedBoard.getCell(coordinates = belowLeftCoordinates) as Material
-                    val isBelowLeftOpen = material.density > materialBelowLeft.density
-
-                    // Check a cell below right.
-                    if (belowRightX !in 0..<updatedBoard.width) continue
-                    val materialBelowRight =
-                        updatedBoard.getCell(coordinates = belowRightCoordinates) as Material
-                    val isBelowRightOpen = material.density > materialBelowRight.density
-
-                    // Exit if at least one of the two places is not free.
-                    if (!isBelowLeftOpen || !isBelowRightOpen) continue
-
-                    val targetCoordinates =
-                        listOf(belowLeftCoordinates, belowRightCoordinates).random()
-                    swapMaterials(material, coordinates, targetCoordinates)
-                    isUpdated = true
+                    val isMoved = this.tryMoveMaterialDownDiagonally(
+                        materialAtCurrentCoordinates = material,
+                        currentCoordinates = coordinates,
+                    )
+                    if (isMoved) isUpdated = true
                 }
 
                 MaterialRule.SLIDE_LEFT -> {
-                    val targetCoordinates = coordinates.copy(
-                        x = coordinates.x + GravityOffsetUnits.LEFT,
-                        y = coordinates.y + GravityOffsetUnits.DOWN,
+                    val isMoved = this.tryMoveMaterialDownLeft(
+                        materialAtCurrentCoordinates = material,
+                        currentCoordinates = coordinates,
                     )
-                    if (targetCoordinates.x !in 0..<updatedBoard.width) continue
-                    if (targetCoordinates.y !in 0..<updatedBoard.height) continue
-                    val materialAtTargetCoordinates =
-                        updatedBoard.getCell(coordinates = targetCoordinates) as Material
-                    if (material.density <= materialAtTargetCoordinates.density) continue
-
-                    swapMaterials(material, coordinates, targetCoordinates)
-                    isUpdated = true
+                    if (isMoved) isUpdated = true
                 }
 
                 MaterialRule.SLIDE_RIGHT -> {
-                    val targetCoordinates = coordinates.copy(
-                        x = coordinates.x + GravityOffsetUnits.RIGHT,
-                        y = coordinates.y + GravityOffsetUnits.DOWN,
+                    val isMoved = this.tryMoveMaterialDownRight(
+                        materialAtCurrentCoordinates = material,
+                        currentCoordinates = coordinates,
                     )
-                    if (targetCoordinates.x !in 0..<updatedBoard.width) continue
-                    if (targetCoordinates.y !in 0..<updatedBoard.height) continue
-                    val materialAtTargetCoordinates =
-                        updatedBoard.getCell(coordinates = targetCoordinates) as Material
-                    if (material.density <= materialAtTargetCoordinates.density) continue
-
-                    swapMaterials(material, coordinates, targetCoordinates)
-                    isUpdated = true
+                    if (isMoved) isUpdated = true
                 }
 
                 MaterialRule.FLOW_HORIZONTAL -> {
-                    val leftCoordinates = coordinates.copy(x = coordinates.x + GravityOffsetUnits.LEFT)
-                    val rightCoordinates = coordinates.copy(x = coordinates.x + GravityOffsetUnits.RIGHT)
-
-                    // Check a cell left.
-                    if (leftCoordinates.x !in 0..<updatedBoard.width) continue
-                    val materialLeft =
-                        updatedBoard.getCell(coordinates = leftCoordinates) as Material
-                    val isLeftOpen = material.density > materialLeft.density
-
-                    // Check a cell right.
-                    if (rightCoordinates.x !in 0..<updatedBoard.width) continue
-                    val materialRight =
-                        updatedBoard.getCell(coordinates = rightCoordinates) as Material
-                    val isRightOpen = material.density > materialRight.density
-
-                    // Exit if at least one of the two places is not free.
-                    if (!isLeftOpen || !isRightOpen) continue
-
-                    val targetCoordinates = listOf(leftCoordinates, rightCoordinates).random()
-                    swapMaterials(material, coordinates, targetCoordinates)
-                    isUpdated = true
+                    val isMoved = this.tryMoveMaterialHorizontally(
+                        materialAtCurrentCoordinates = material,
+                        currentCoordinates = coordinates,
+                    )
+                    if (isMoved) isUpdated = true
                 }
 
                 MaterialRule.FLOW_LEFT -> {
-                    val targetCoordinates = coordinates.copy(
-                        x = coordinates.x + GravityOffsetUnits.LEFT,
+                    val isMoved = this.tryMoveMaterialLeft(
+                        materialAtCurrentCoordinates = material,
+                        currentCoordinates = coordinates,
                     )
-                    if (targetCoordinates.x !in 0..<updatedBoard.width) continue
-                    val materialAtTargetCoordinates =
-                        updatedBoard.getCell(coordinates = targetCoordinates) as Material
-                    if (material.density <= materialAtTargetCoordinates.density) continue
-
-                    swapMaterials(material, coordinates, targetCoordinates)
-                    isUpdated = true
+                    if (isMoved) isUpdated = true
                 }
 
                 MaterialRule.FLOW_RIGHT -> {
-                    val targetCoordinates = coordinates.copy(
-                        x = coordinates.x + GravityOffsetUnits.RIGHT,
+                    val isMoved = this.tryMoveMaterialRight(
+                        materialAtCurrentCoordinates = material,
+                        currentCoordinates = coordinates,
                     )
-                    if (targetCoordinates.x !in 0..<updatedBoard.width) continue
-                    val materialAtTargetCoordinates =
-                        updatedBoard.getCell(coordinates = targetCoordinates) as Material
-                    if (material.density <= materialAtTargetCoordinates.density) continue
-
-                    swapMaterials(material, coordinates, targetCoordinates)
-                    isUpdated = true
+                    if (isMoved) isUpdated = true
                 }
             }
         }
     }
 
-    private fun swapMaterials(
-        firstMaterial: Material,
-        firstMaterialCoordinates: RectCoordinates,
-        secondMaterialCoordinates: RectCoordinates,
-    ) {
-        val secondMaterial = updatedBoard.getCell(secondMaterialCoordinates)
-        updatedBoard = updatedBoard.copy { coordinates ->
-            when (coordinates) {
-                firstMaterialCoordinates -> secondMaterial
-                secondMaterialCoordinates -> firstMaterial
-                else -> updatedBoard.getCell(coordinates)
-            }
+    /**
+     * Move the material down if it is possible.
+     */
+    private fun MutableBoard.tryMoveMaterialDown(
+        materialAtCurrentCoordinates: Material,
+        currentCoordinates: RectCoordinates,
+    ): Boolean {
+        val targetCoordinates = currentCoordinates.copy(
+            y = currentCoordinates.y + GravityOffsetUnits.DOWN,
+        )
+        if (targetCoordinates.y !in 0..<this.height) return false
+
+        val materialAtTargetCoordinates =
+            this.getCell(coordinates = targetCoordinates) as Material
+        if (materialAtCurrentCoordinates.density <= materialAtTargetCoordinates.density) {
+            return false
         }
+
+        // Swap cells.
+        this.setCell(coordinates = currentCoordinates, cell = materialAtTargetCoordinates)
+        this.setCell(coordinates = targetCoordinates, cell = materialAtCurrentCoordinates)
+        return true
+    }
+
+    /**
+     * Move the material down diagonally if it is possible.
+     */
+    private fun MutableBoard.tryMoveMaterialDownDiagonally(
+        materialAtCurrentCoordinates: Material,
+        currentCoordinates: RectCoordinates,
+    ): Boolean {
+        val targetY = currentCoordinates.y + GravityOffsetUnits.DOWN
+        val belowLeftX = currentCoordinates.x + GravityOffsetUnits.LEFT
+        val belowRightX = currentCoordinates.x + GravityOffsetUnits.RIGHT
+        val belowLeftCoordinates = RectCoordinates(x = belowLeftX, y = targetY)
+        val belowRightCoordinates = RectCoordinates(x = belowRightX, y = targetY)
+
+        if (targetY !in 0..<this.height) return false
+
+        // Check a cell below left.
+        if (belowLeftX !in 0..<this.width) return false
+        val materialBelowLeft =
+            this.getCell(coordinates = belowLeftCoordinates) as Material
+        val isBelowLeftOpen = materialAtCurrentCoordinates.density > materialBelowLeft.density
+
+        // Check a cell below right.
+        if (belowRightX !in 0..<this.width) return false
+        val materialBelowRight =
+            this.getCell(coordinates = belowRightCoordinates) as Material
+        val isBelowRightOpen = materialAtCurrentCoordinates.density > materialBelowRight.density
+
+        // Exit if at least one of the two places is not free.
+        if (!isBelowLeftOpen || !isBelowRightOpen) return false
+
+        // Select the target cell.
+        val targetCoordinates =
+            listOf(belowLeftCoordinates, belowRightCoordinates).random()
+        val materialAtTargetCoordinates = this.getCell(coordinates = targetCoordinates)
+
+        // Swap cells.
+        this.setCell(coordinates = currentCoordinates, cell = materialAtTargetCoordinates)
+        this.setCell(coordinates = targetCoordinates, cell = materialAtCurrentCoordinates)
+        return true
+    }
+
+    /**
+     * Move the material down left if it is possible.
+     */
+    private fun MutableBoard.tryMoveMaterialDownLeft(
+        materialAtCurrentCoordinates: Material,
+        currentCoordinates: RectCoordinates,
+    ): Boolean {
+        val targetCoordinates = currentCoordinates.copy(
+            x = currentCoordinates.x + GravityOffsetUnits.LEFT,
+            y = currentCoordinates.y + GravityOffsetUnits.DOWN,
+        )
+        if (targetCoordinates.x !in 0..<this.width) return false
+        if (targetCoordinates.y !in 0..<this.height) return false
+        val materialAtTargetCoordinates =
+            this.getCell(coordinates = targetCoordinates) as Material
+        if (materialAtCurrentCoordinates.density <= materialAtTargetCoordinates.density) {
+            return false
+        }
+
+        // Swap cells.
+        this.setCell(coordinates = currentCoordinates, cell = materialAtTargetCoordinates)
+        this.setCell(coordinates = targetCoordinates, cell = materialAtCurrentCoordinates)
+        return true
+    }
+
+    /**
+     * Move the material down right if it is possible.
+     */
+    private fun MutableBoard.tryMoveMaterialDownRight(
+        materialAtCurrentCoordinates: Material,
+        currentCoordinates: RectCoordinates,
+    ): Boolean {
+        val targetCoordinates = currentCoordinates.copy(
+            x = currentCoordinates.x + GravityOffsetUnits.RIGHT,
+            y = currentCoordinates.y + GravityOffsetUnits.DOWN,
+        )
+        if (targetCoordinates.x !in 0..<this.width) return false
+        if (targetCoordinates.y !in 0..<this.height) return false
+        val materialAtTargetCoordinates =
+            this.getCell(coordinates = targetCoordinates) as Material
+        if (materialAtCurrentCoordinates.density <= materialAtTargetCoordinates.density) {
+            return false
+        }
+
+        // Swap cells.
+        this.setCell(coordinates = currentCoordinates, cell = materialAtTargetCoordinates)
+        this.setCell(coordinates = targetCoordinates, cell = materialAtCurrentCoordinates)
+        return true
+    }
+
+    /**
+     * Move the material horizontally if it is possible.
+     */
+    private fun MutableBoard.tryMoveMaterialHorizontally(
+        materialAtCurrentCoordinates: Material,
+        currentCoordinates: RectCoordinates,
+    ): Boolean {
+        val leftCoordinates = currentCoordinates
+            .copy(x = currentCoordinates.x + GravityOffsetUnits.LEFT)
+        val rightCoordinates = currentCoordinates
+            .copy(x = currentCoordinates.x + GravityOffsetUnits.RIGHT)
+
+        // Check a cell left.
+        if (leftCoordinates.x !in 0..<this.width) return false
+        val materialLeft =
+            this.getCell(coordinates = leftCoordinates) as Material
+        val isLeftOpen = materialAtCurrentCoordinates.density > materialLeft.density
+
+        // Check a cell right.
+        if (rightCoordinates.x !in 0..<this.width) return false
+        val materialRight =
+            this.getCell(coordinates = rightCoordinates) as Material
+        val isRightOpen = materialAtCurrentCoordinates.density > materialRight.density
+
+        // Exit if at least one of the two places is not free.
+        if (!isLeftOpen || !isRightOpen) return false
+
+        // Select the target cell.
+        val targetCoordinates =
+            listOf(leftCoordinates, rightCoordinates).random()
+        val materialAtTargetCoordinates = this.getCell(coordinates = targetCoordinates)
+
+        // Swap cells.
+        this.setCell(coordinates = currentCoordinates, cell = materialAtTargetCoordinates)
+        this.setCell(coordinates = targetCoordinates, cell = materialAtCurrentCoordinates)
+        return true
+    }
+
+    /**
+     * Move the material left if it is possible.
+     */
+    private fun MutableBoard.tryMoveMaterialLeft(
+        materialAtCurrentCoordinates: Material,
+        currentCoordinates: RectCoordinates,
+    ): Boolean {
+        val targetCoordinates = currentCoordinates.copy(
+            x = currentCoordinates.x + GravityOffsetUnits.LEFT,
+        )
+        if (targetCoordinates.x !in 0..<this.width) return false
+        val materialAtTargetCoordinates =
+            this.getCell(coordinates = targetCoordinates) as Material
+        if (materialAtCurrentCoordinates.density <= materialAtTargetCoordinates.density) {
+            return false
+        }
+
+        // Swap cells.
+        this.setCell(coordinates = currentCoordinates, cell = materialAtTargetCoordinates)
+        this.setCell(coordinates = targetCoordinates, cell = materialAtCurrentCoordinates)
+        return true
+    }
+
+    /**
+     * Move the material right if it is possible.
+     */
+    private fun MutableBoard.tryMoveMaterialRight(
+        materialAtCurrentCoordinates: Material,
+        currentCoordinates: RectCoordinates,
+    ): Boolean {
+        val targetCoordinates = currentCoordinates.copy(
+            x = currentCoordinates.x + GravityOffsetUnits.RIGHT,
+        )
+        if (targetCoordinates.x !in 0..<this.width) return false
+        val materialAtTargetCoordinates =
+            this.getCell(coordinates = targetCoordinates) as Material
+        if (materialAtCurrentCoordinates.density <= materialAtTargetCoordinates.density) {
+            return false
+        }
+
+        // Swap cells.
+        this.setCell(coordinates = currentCoordinates, cell = materialAtTargetCoordinates)
+        this.setCell(coordinates = targetCoordinates, cell = materialAtCurrentCoordinates)
+        return true
     }
 }
