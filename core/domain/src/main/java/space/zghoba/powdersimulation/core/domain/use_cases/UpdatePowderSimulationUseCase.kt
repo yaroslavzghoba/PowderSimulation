@@ -4,7 +4,7 @@ import space.zghoba.powdersimulation.core.mappers.toBoard
 import space.zghoba.powdersimulation.core.mappers.toMutableBoard
 import space.zghoba.powdersimulation.core.model.Board
 import space.zghoba.powdersimulation.core.model.Material
-import space.zghoba.powdersimulation.core.model.MaterialRule
+import space.zghoba.powdersimulation.core.model.MaterialMovementRule
 import space.zghoba.powdersimulation.core.model.MutableBoard
 import space.zghoba.powdersimulation.core.model.RectCoordinates
 import space.zghoba.powdersimulation.core.model.copy
@@ -48,65 +48,59 @@ class UpdatePowderSimulationUseCase {
                 "The cell at coordinates $coordinates is not a material.",
             )
 
-        var isUpdated = false
+        // Move the material according to its rules.
+        var isMoved = false
         for (rule in material.rules) {
-            if (isUpdated) continue
+            if (isMoved) continue
 
-            when (rule) {
-                MaterialRule.FALL_STRAIGHT -> {
-                    val isMoved = this.tryMoveMaterialDown(
+            isMoved = when (rule) {
+                MaterialMovementRule.FALL_STRAIGHT -> {
+                    this.tryMoveMaterialDown(
                         materialAtCurrentCoordinates = material,
                         currentCoordinates = coordinates,
                     )
-                    if (isMoved) isUpdated = true
                 }
 
-                MaterialRule.SLIDE_DIAGONALLY -> {
-                    val isMoved = this.tryMoveMaterialDownDiagonally(
+                MaterialMovementRule.SLIDE_DIAGONALLY -> {
+                    this.tryMoveMaterialDownDiagonally(
                         materialAtCurrentCoordinates = material,
                         currentCoordinates = coordinates,
                     )
-                    if (isMoved) isUpdated = true
                 }
 
-                MaterialRule.SLIDE_LEFT -> {
-                    val isMoved = this.tryMoveMaterialDownLeft(
+                MaterialMovementRule.SLIDE_LEFT -> {
+                    this.tryMoveMaterialDownLeft(
                         materialAtCurrentCoordinates = material,
                         currentCoordinates = coordinates,
                     )
-                    if (isMoved) isUpdated = true
                 }
 
-                MaterialRule.SLIDE_RIGHT -> {
-                    val isMoved = this.tryMoveMaterialDownRight(
+                MaterialMovementRule.SLIDE_RIGHT -> {
+                    this.tryMoveMaterialDownRight(
                         materialAtCurrentCoordinates = material,
                         currentCoordinates = coordinates,
                     )
-                    if (isMoved) isUpdated = true
                 }
 
-                MaterialRule.FLOW_HORIZONTAL -> {
-                    val isMoved = this.tryMoveMaterialHorizontally(
+                MaterialMovementRule.FLOW_HORIZONTAL -> {
+                    this.tryMoveMaterialHorizontally(
                         materialAtCurrentCoordinates = material,
                         currentCoordinates = coordinates,
                     )
-                    if (isMoved) isUpdated = true
                 }
 
-                MaterialRule.FLOW_LEFT -> {
-                    val isMoved = this.tryMoveMaterialLeft(
+                MaterialMovementRule.FLOW_LEFT -> {
+                    this.tryMoveMaterialLeft(
                         materialAtCurrentCoordinates = material,
                         currentCoordinates = coordinates,
                     )
-                    if (isMoved) isUpdated = true
                 }
 
-                MaterialRule.FLOW_RIGHT -> {
-                    val isMoved = this.tryMoveMaterialRight(
+                MaterialMovementRule.FLOW_RIGHT -> {
+                    this.tryMoveMaterialRight(
                         materialAtCurrentCoordinates = material,
                         currentCoordinates = coordinates,
                     )
-                    if (isMoved) isUpdated = true
                 }
             }
         }
